@@ -115,4 +115,19 @@ class MetaHandler(MetaBot):
             k = i.split('|')
             self.requested |= set((z for z in k if '{' not in z and '}' not in z and '=' not in z))
         del content #Remove this heavy bunch of text from the memory
+        return self.requested
+    
+    def new_lock_request(self, account):
+        "This method is used to request a lock for a new account"
+        if isinstance(account, set):
+            self.new |= account
+        elif isinstance(account, str):
+            self.new |= {account}
+        else:
+            self.new |= set(account) #If a list would have been passed
+    
+    def request_locks(self):
+        "This function will request locks for all the accounts listed in self.new"
+        lines = [f'Global lock for {next(iter(self.new))} and {len(self.new) - 1} other spam accounts'] #List to store the lines containing the block message
+        pass
     

@@ -101,7 +101,8 @@ class MetaHandler(MetaBot):
     
     def filter_new_locks(self):
         "This function will filter out all accounts for which a lock has already been requested"
-        return self.new - self.requested
+        self.new -= self.requested
+        return self.new
     
     def existing_lock_requests(self):
         "This function will identify the lock requests placed"
@@ -115,7 +116,7 @@ class MetaHandler(MetaBot):
             k = i.split('|')
             self.requested |= set((z for z in k if '{' not in z and '}' not in z and '=' not in z))
         del content #Remove this heavy bunch of text from the memory
-        return self.requested
+        return self.requested        
     
     def new_lock_request(self, account):
         "This method is used to request a lock for a new account"
@@ -126,8 +127,20 @@ class MetaHandler(MetaBot):
         else:
             self.new |= set(account) #If a list would have been passed
     
-    def request_locks(self):
+    def request_locks(self, filterstring):
         "This function will request locks for all the accounts listed in self.new"
+        self.filter_new_locks()
         lines = [f'Global lock for {next(iter(self.new))} and {len(self.new) - 1} other spam accounts'] #List to store the lines containing the block message
-        pass
-    
+        #The accounts to be locked are the ones in self.new - prepare the template and the request
+        if len(self.new) == 1:
+            lines.append('{{LockHide|%s}}'%(''.join(self.new)))
+        elif len(self.new) >= 10:
+            #This is a special case, it is not desired to list all of the accounts
+            lines += ['{{Collapse top|User list}}',
+                      '{{MultiLock|%s}}'%('|'.join(self.new)),
+                      '{{Collapse bottom}}']
+        else:
+            lines.append('{{MultiLock|%s}}'%('|'.join(self.new)))
+        lines.append(f'Spam accounts, caught in {filterstring}. ~~~~') #Filterstring indicates the wiki and the number of the filter
+        #Make the request to the Meta API
+        pass   

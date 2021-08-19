@@ -16,7 +16,7 @@ import time
 import re #Regex should be used
 
 class Bot:
-    "This function will implement the main functionalities for a bot"
+    "This function will implement the main functionalities for a bot"  
     def __init__(self, api=r"https://meta.wikimedia.org/w/api.php", m=1):
         'Constructs a bot, designed to interact with one Wikipedia. Here, metawiki should be used as main wiki'
         self.api = api
@@ -28,7 +28,7 @@ class Bot:
     def __str__(self):
         return self.api.copy()
 
-    def verify_OAuth(self, file="Tokens.txt"):
+    def verify_OAuth(self, file="General gadgets.txt"):
         'This function will verify whether the OAuth-auth has been configured. If not, it will do the configuration.'
         if self._auth is None:
             with open(file, 'r') as secret:
@@ -68,7 +68,7 @@ class Bot:
         assert 'action' in params, 'Please provide an action'
         t = float(time.time())
         self.ti = [i for i in self.ti if i >= t - 60] #Clean this mess
-        if len(self.ti) >= Bot.max_edit: #Check this again, after doing the cleaning
+        if len(self.ti) >= self._max: #Check this again, after doing the cleaning
             print('Going to sleep for a while')
             time.sleep(20) #Fuck, we need to stop
             return self.post(params) #run the function again - but: with a delay of some 60 seconds
@@ -98,49 +98,85 @@ class MetaHandler(MetaBot):
         super().__init__()
         self.requested = set() #A set in which all accounts currently listed on m:SRG can be put into
         self.new = set() #A set to be used to store any new accounts to be locked in
+        self.update_edit_conflict() #UTC time at this point, override later
+        self._srg = "Steward requests/Global"
+    
+    def __iadd__(self, account):
+        self.new_lock_request(account)
+        return self
     
     def filter_new_locks(self):
         "This function will filter out all accounts for which a lock has already been requested"
+        if not self.requested:
+            self.existing_lock_requests() #Get the existing lock requests the first time this is requested
         self.new -= self.requested
         return self.new
+    
+    def update_edit_conflict(self):
+        "This code indicates that we made a new query"
+        self._editconflict = dt.datetime.utcnow().isoformat()
     
     def existing_lock_requests(self):
         "This function will identify the lock requests placed"
         sp, mp = r'\{\{Lock[hH]ide\|[^\}]+\}\}', r'\{\{Multi[lL]ock\|[^\}]+\}\}' #Define the regex patterns to be used
         payload = {'action': 'parse',
-                   'page':'Steward requests/Global',
+                   'page':self._srg,
                    'disabletoc':True,
                    'prop':'wikitext'}
         content = self.get(payload)['parse']['wikitext']['*']
         for i in re.findall(sp, content) + re.findall(mp, content): #Browse through all the found templates (MultiLocks and LockHide)
             k = i.split('|')
-            self.requested |= set((z for z in k if '{' not in z and '}' not in z and '=' not in z))
+            k[-1] = k[-1].replace('}', '')
+            self.requested |= set((z for z in k if '{' not in z and '=' not in z))
         del content #Remove this heavy bunch of text from the memory
         return self.requested        
     
     def new_lock_request(self, account):
         "This method is used to request a lock for a new account"
         if isinstance(account, set):
-            self.new |= account
+            self.new |= {i.strip() for i in account}
         elif isinstance(account, str):
-            self.new |= {account}
+            self.new |= {account.strip()}
         else:
-            self.new |= set(account) #If a list would have been passed
+            self.new |= set((i.strip() for i in account)) #If a list would have been passed
+            
+    def get_SRG_section(self):
+        "This function gets the current sections at m:SRG. This method is called by request_locks. The method returns the section index that should be used"
+        dic = {'action':'parse',
+               'page':self._srg,
+               'prop':'sections'}
+        fish = self.get(dic)['parse']['sections']
+        self.update_edit_conflict()
+        return int(next((i for i in fish if i['line'] == 'See also'))['index']) - 1 #This is the section number where text has to be appended
     
     def request_locks(self, filterstring):
         "This function will request locks for all the accounts listed in self.new"
         self.filter_new_locks()
-        lines = [f'Global lock for {next(iter(self.new))} and {len(self.new) - 1} other spam accounts'] #List to store the lines containing the block message
+        assert self.new, 'There is nothing to lock!'
+        lines = ['\n',
+                 f'=== Global lock for {next(iter(self.new))} and {len(self.new) - 1} other spam accounts ===',
+                 '{{Status}}'] #List to store the lines containing the block message
         #The accounts to be locked are the ones in self.new - prepare the template and the request
         if len(self.new) == 1:
-            lines.append('{{LockHide|%s}}'%(''.join(self.new)))
+            lines.append('*{{LockHide|%s}}'%(''.join(self.new)))
+            lines[1] = f'=== Global lock for {next(iter(self.new))} ==='
         elif len(self.new) >= 10:
             #This is a special case, it is not desired to list all of the accounts
             lines += ['{{Collapse top|User list}}',
-                      '{{MultiLock|%s}}'%('|'.join(self.new)),
+                      '*{{MultiLock|%s}}'%('|'.join(self.new)),
                       '{{Collapse bottom}}']
         else:
-            lines.append('{{MultiLock|%s}}'%('|'.join(self.new)))
-        lines.append(f'Spam accounts, caught in {filterstring}. ~~~~') #Filterstring indicates the wiki and the number of the filter
+            lines.append('*{{MultiLock|%s}}'%('|'.join(self.new)))
+        
+        if filterstring.endswith('.'):
+            filterstring = filterstring[:-1] #Remove the final dot, it's already placed in the summary
+            
+        lines.append(f'Spam account(s), caught in {filterstring}. --~~~~') #Filterstring indicates the wiki and the number of the filter
         #Make the request to the Meta API
-        pass   
+        d2 = {'action':'edit',
+              'title':self._srg,
+              'summary':f'Reporting {len(self.new)} account(s)',
+              'section':self.get_SRG_section(),
+              'nocreate':True,
+              'appendtext':'\n'.join(lines)}
+        return self.post(d2)

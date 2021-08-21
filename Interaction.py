@@ -105,6 +105,15 @@ class MetaHandler(MetaBot):
         self.new_lock_request(account)
         return self
     
+    def check_locked(self, account):
+        "Checks whether the account passed is currently locked"
+        check = {'action':'query', 'meta':'globaluserinfo', 'guiuser':account, 'format':'json'}
+        try:
+            data = self.get(check)['query']['globaluserinfo']
+            return 'locked' in data
+        finally:
+            return False
+    
     def filter_new_locks(self):
         "This function will filter out all accounts for which a lock has already been requested"
         if not self.requested:

@@ -148,6 +148,14 @@ class MetaHandler(MetaBot):
             self.new |= {account.strip()}
         else:
             self.new |= set((i.strip() for i in account)) #If a list would have been passed
+    
+    def check_requested(self, account):
+        if not self.requested:
+            self.existing_lock_requests()
+        return account.strip() in self.requested
+    
+    def __call__(self, account):
+        return self.check_requested(account and not self.check_locked(account))
             
     def get_SRG_section(self):
         "This function gets the current sections at m:SRG. This method is called by request_locks. The method returns the section index that should be used"

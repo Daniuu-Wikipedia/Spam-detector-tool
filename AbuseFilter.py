@@ -53,7 +53,7 @@ class AbuseFilter:
                'list':'abuselog',
                'aflfilter':self.filter,
                'aflprop':'user|title|timestamp|details',
-               'afllimit':1} #Separate function is only implemented for MultiFilter stuff
+               'afllimit':50} #Separate function is only implemented for MultiFilter stuff
     
     def get_hits(self, cont=None, start=None):
         "Get the first 50 hits, starting from cont (for continuation of previous requests)"

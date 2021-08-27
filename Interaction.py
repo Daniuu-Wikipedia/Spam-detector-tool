@@ -111,7 +111,7 @@ class MetaHandler(MetaBot):
         try:
             data = self.get(check)['query']['globaluserinfo']
             return 'locked' in data
-        finally:
+        except:
             return False
     
     def filter_new_locks(self):
@@ -119,6 +119,11 @@ class MetaHandler(MetaBot):
         if not self.requested:
             self.existing_lock_requests() #Get the existing lock requests the first time this is requested
         self.new -= self.requested
+        locked = set()
+        for i in self.new:
+            if self.check_locked(i) is True:
+                locked.add(i)
+        self.new -= locked #Remove all accounts that were already locked for the ease of calculation
         return self.new
     
     def update_edit_conflict(self):
@@ -155,7 +160,10 @@ class MetaHandler(MetaBot):
         return account.strip() in self.requested
     
     def __call__(self, account):
-        return self.check_requested(account and not self.check_locked(account))
+        return self.check_requested(account) and not self.check_locked(account)
+    
+    def get_lock_requests(self):
+        return tuple(sorted(self.new))
             
     def get_SRG_section(self):
         "This function gets the current sections at m:SRG. This method is called by request_locks. The method returns the section index that should be used"

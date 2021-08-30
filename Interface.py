@@ -20,6 +20,8 @@ class Window:
         self._title = tk.StringVar(self.root) #The value for the title (string)
         self._content = tk.StringVar(self.root) #The string for the content
         self._user = tk.StringVar(self.root)
+        self._titlefield, self._contentfield, self._userfield = None, None, None #should be set later
+        
     
     @property #Define a couple of properties for the most commoon operations
     def title(self):
@@ -46,3 +48,11 @@ class Window:
     @user.setter 
     def user(self, value):
         return self._user.set(value)
+    
+    def prepare_fields(self):
+        "This method prepares the three fields with the main parameters"
+        pass #Work in progress
+    
+    def set_callbacks(self):
+        "This method makes sure that updates to the string variables also update the labels"
+        pass

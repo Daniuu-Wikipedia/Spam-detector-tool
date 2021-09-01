@@ -84,8 +84,7 @@ class AbuseFilter:
         "Iterator that can be used by the interface to get the matches one by one"
         if self.hits is None or isinstance(self.hits, set):
             self.filter_hits()
-        for i in self.hits:
-            yield i
+        return self.hits #Just store it
     
     def get_next_hits(self):
         "This will get the next bunch of hits (using the current self._continue value, obtained form the API)"

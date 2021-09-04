@@ -106,6 +106,9 @@ class AbuseFilter:
     def request_locks(self):
         "This method will request locks for the accounts that are currently listed in the MetaHandler"
         AbuseFilter.meta.request_locks()
+        
+    def ask_lock_for_account(self, account):
+        AbuseFilter.meta += account #Use the short way to request a lock 
 
 class MultiFilter(AbuseFilter):
     'This class can be used to store multiple abuse filters, and to patrol all of them'

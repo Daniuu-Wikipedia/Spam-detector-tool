@@ -63,6 +63,11 @@ class Window:
         self._titlefield.config(font=(Window.font, 20)) #Configure the font size
         self._contentfield.config(font=(Window.font, 12))
         self._userfield.config(font=(Window.font, 20)) #Configure font size
+        
+    def make_button(self, text, action, color, col, row=3):
+        "This method will make a general button with the requested settings"
+        new = tk.Button(self.root)
+        return new
     
     def make_lock_button(self):
         "This method returns a button that can be used to request locks for the stored accounts."
@@ -70,7 +75,7 @@ class Window:
         
     def request_locks(self):
         "This method is the callback for the request locks button"
-        pass
+        return self.filters.request_locks()
     
     def ignore_button(self):
         "This method prepares a button that ignores the currently listed user."

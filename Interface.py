@@ -128,6 +128,10 @@ class Window:
         threading.Thread(target=self.request_locks).start() #Request the locks in parallel
         self.get_next_hits()
         return self.load_next_account() #Load the next account into the list
+    
+    def stop_run(self):
+        "Stops the current run and tells the user to abort the run."
+        
         
 
 

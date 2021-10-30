@@ -15,25 +15,6 @@ class AllLockedError(Exception):
     def __str__(self):
         return "All accounts that were found, are already listed at m:SRG or locked."
 
-class Hit:
-    "This class provides the code required to process a hit in the filter (or a log entry, what you prefer)"
-    def __init__(self, hit):
-        "Constructs hit from an abuselog entry"
-        self.user = hit['user']
-        self.title = hit['title']
-        self.content = hit['details']['new_wikitext']
-    
-    def __str__(self):
-        return self.user
-    
-    def __eq__(self, other):
-        return self.user == other.user
-    
-    def __hash__(self):
-        return self.user.__hash__()    
-    
-    def __repr__(self):
-        return str(self)
 
 class AbuseFilter:
     "This class provides the main functions for the Abuse filters (get hits and process them)"
@@ -63,9 +44,9 @@ class AbuseFilter:
         data = AbuseFilter.meta.get(dic)
         try:
             self._continue = data['continue']['aflstart'] #Set the continuation parameter
+            print(self._continue, data['continue'])
         except KeyError:
             self._continue = None
-        return dic
 
         #Generate a list of hits(but filter out the locked accounts)
         hits = data['query']['abuselog'] #The hits from the abuse log
@@ -105,7 +86,7 @@ class AbuseFilter:
     
     def request_locks(self):
         "This method will request locks for the accounts that are currently listed in the MetaHandler"
-        AbuseFilter.meta.request_locks()
+        AbuseFilter.meta.request_locks(self._string)
         
     def ask_lock_for_account(self, account):
         AbuseFilter.meta += account #Use the short way to request a lock 
@@ -133,6 +114,9 @@ class Hit:
     def __str__(self):
         return self.user
     
+    def __repr__(self):
+        return str(self)
+    
     def __eq__(self, other):
         return self.user == other.user
     
@@ -147,3 +131,6 @@ class Hit:
     
     def get_title(self):
         return self.title
+    
+    def account(self):
+        return self.user

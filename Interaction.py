@@ -28,7 +28,7 @@ class Bot:
     def __str__(self):
         return self.api.copy()
 
-    def verify_OAuth(self, file="General gadgets.txt"):
+    def verify_OAuth(self, file="OAuth Spam detector.txt"):
         'This function will verify whether the OAuth-auth has been configured. If not, it will do the configuration.'
         if self._auth is None:
             with open(file, 'r') as secret:
@@ -151,6 +151,8 @@ class MetaHandler(MetaBot):
             self.new |= {i.strip() for i in account}
         elif isinstance(account, str):
             self.new |= {account.strip()}
+        elif hasattr(account, 'user'):
+            self.new |= {account.user}
         else:
             self.new |= set((i.strip() for i in account)) #If a list would have been passed
     
@@ -160,7 +162,7 @@ class MetaHandler(MetaBot):
         return account.strip() in self.requested
     
     def __call__(self, account):
-        return self.check_requested(account) and not self.check_locked(account)
+        return not(self.check_requested(account.account()) or self.check_locked(account.account()))
     
     def get_lock_requests(self):
         return tuple(sorted(self.new))

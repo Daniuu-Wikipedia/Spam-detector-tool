@@ -118,6 +118,8 @@ class Hit:
         return str(self)
     
     def __eq__(self, other):
+        if isinstance(other, str):
+            return self.user == other
         return self.user == other.user
     
     def __hash__(self):
@@ -134,3 +136,14 @@ class Hit:
     
     def account(self):
         return self.user
+
+import time
+n = 169
+s = float(time.time())
+z = AbuseFilter(MetaBot(), 'global abuse filter %d'%n, n)
+z.get_next_hits()
+z.hits.remove('Artur Shahverdyan')
+for i in z.hits:
+    z.ask_lock_for_account(i)
+z.request_locks()
+print(float(time.time()) - s)

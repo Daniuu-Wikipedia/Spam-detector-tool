@@ -121,7 +121,7 @@ class MetaHandler(MetaBot):
         self.new -= self.requested
         locked = set()
         for i in self.new:
-            if self.check_locked(i) is True:
+            if self.check_locked(i) is True or i[0].isdigit():
                 locked.add(i)
         self.new -= locked #Remove all accounts that were already locked for the ease of calculation
         return self.new
